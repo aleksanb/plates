@@ -1,0 +1,16 @@
+[package]
+name = "plates"
+version = "0.1.0"
+authors = ["Aleksander Vognild Burkow <aleksanderburkow@gmail.com>"]
+
+[dependencies]
+select = "0.2.2"
+hyper = "0.9.9"
+
+iron = "*"
+router = "*"
+params = "*"
+rustc-serialize = "*"
+urlencoded = "*"
+regex = "*"
+quick-error = "*"

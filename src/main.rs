@@ -76,15 +76,8 @@ fn query_hander(request: &mut Request) -> IronResult<Response> {
         return Ok(Response::with((status::BadRequest, "Invalid number format\n")));
     }
 
-    let result = disk_cache::get_cached_or_compute(query, get_registration_number);
-    match result {
-        Ok(value) => {
-            Ok(Response::with((status::Ok, value)))
-        },
-        Err(err) => {
-            Ok(Response::with((status::BadRequest, err.to_string())))
-        }
-    }
+    let result = itry!(disk_cache::get_cached_or_compute(query, get_registration_number));
+    Ok(Response::with((status::Ok, result)))
 }
 
 fn main() {

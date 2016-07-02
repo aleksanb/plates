@@ -1,9 +1,9 @@
-use std::fs;
-use std::fs::File;
+use std::fs::{File, DirBuilder};
 use std::path::Path;
 use std::io::prelude::*;
 use std::io;
 use std::fmt;
+use std::error;
 
 static CACHE_DIR: &'static str = "cache";
 
@@ -32,13 +32,32 @@ impl From<io::Error> for CacheError {
     }
 }
 
+impl From<String> for CacheError {
+    fn from(err: String) -> CacheError {
+        CacheError::Callback(err)
+    }
+}
+
+impl error::Error for CacheError {
+    fn description(&self) -> &str {
+        match *self {
+            CacheError::Io(ref err) => err.description(),
+            CacheError::Callback(ref msg) => msg,
+        }
+    }
+}
+
 pub type CacheResult = Result<String, CacheError>;
 
 pub fn get_cached_or_compute<E, F>(key: &str, fun: F) -> CacheResult
         where E: fmt::Display,
               F: Fn(&str) -> Result<String, E> {
-    let path = prefix!(key);
+    let root = Path::new(CACHE_DIR);
+    try!(DirBuilder::new()
+        .recursive(true)
+        .create(&root));
 
+    let path = root.join(key);
     if let Ok(mut file) = File::open(&path) {
         let mut buf = String::new();
         if let Ok(_) = file.read_to_string(&mut buf) {

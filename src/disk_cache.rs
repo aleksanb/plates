@@ -62,9 +62,12 @@ pub fn get_cached_or_compute<E, F>(key: &str, fun: F) -> CacheResult
     if let Ok(mut file) = File::open(&path) {
         let mut buf = String::new();
         if let Ok(_) = file.read_to_string(&mut buf) {
+            info!("Cache hit for {}", key);
             return Ok(buf);
         }
     }
+
+    info!("Cache miss for {}", key);
 
     let value = match fun(key) {
         Ok(value) => value,
@@ -73,6 +76,8 @@ pub fn get_cached_or_compute<E, F>(key: &str, fun: F) -> CacheResult
 
     let mut file = try!(File::create(&path));
     try!(file.write_all(value.as_bytes()));
+
+    info!("New value for {} stored to disk", key);
 
     Ok(value)
 }

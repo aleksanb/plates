@@ -50,8 +50,9 @@ impl error::Error for CacheError {
 pub type CacheResult = Result<String, CacheError>;
 
 pub fn get_cached_or_compute<E, F>(key: &str, fun: F) -> CacheResult
-        where E: fmt::Display,
-              F: Fn(&str) -> Result<String, E> {
+    where E: fmt::Display,
+          F: Fn(&str) -> Result<String, E>
+{
     let root = Path::new(CACHE_DIR);
     try!(DirBuilder::new()
         .recursive(true)
@@ -61,7 +62,7 @@ pub fn get_cached_or_compute<E, F>(key: &str, fun: F) -> CacheResult
     if let Ok(mut file) = File::open(&path) {
         let mut buf = String::new();
         if let Ok(_) = file.read_to_string(&mut buf) {
-            return Ok(buf)
+            return Ok(buf);
         }
     }
 
@@ -83,9 +84,9 @@ fn get_existing() {
 
     File::create(path).unwrap();
 
-    let response = get_cached_or_compute(
-        existing_key,
-        |_| Err(io::Error::new(io::ErrorKind::Interrupted, "Fuu")));
+    let response = get_cached_or_compute(existing_key, |_| {
+        Err(io::Error::new(io::ErrorKind::Interrupted, "Fuu"))
+    });
 
     assert!(response.is_ok());
 }

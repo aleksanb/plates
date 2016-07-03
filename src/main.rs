@@ -1,12 +1,15 @@
-#[macro_use] extern crate quick_error;
+#[macro_use]
+extern crate quick_error;
 
 extern crate rustc_serialize;
 extern crate select;
 extern crate hyper;
 extern crate regex;
 
-#[macro_use] extern crate iron;
-#[macro_use] extern crate router;
+#[macro_use]
+extern crate iron;
+#[macro_use]
+extern crate router;
 extern crate urlencoded;
 extern crate params;
 
@@ -34,19 +37,21 @@ pub struct Section {
 
 fn table_to_section(table: Node) -> Section {
     let title = table.find(Class("modul-overskrift")).first().unwrap().text();
-    let table_body = table.find(Name("th")).iter()
+    let table_body = table.find(Name("th"))
+        .iter()
         .zip(table.find(Name("td")).iter())
         .map(|(th, td)| (th.text(), td.text()))
         .collect::<HashMap<_, _>>();
 
     Section {
         title: title,
-        table_body: table_body
+        table_body: table_body,
     }
 }
 
 fn get_registration_number(registration_number: &str) -> Result<String, String> {
-    let api_url = "http://www.vegvesen.no/Kjoretoy/Kjop+og+salg/Kjøretøyopplysninger?registreringsnummer=";
+    let api_url = "http://www.vegvesen.\
+                   no/Kjoretoy/Kjop+og+salg/Kjøretøyopplysninger?registreringsnummer=";
     let request_url = format!("{}{}", api_url, registration_number);
 
     let client = hyper::Client::new();
@@ -56,7 +61,8 @@ fn get_registration_number(registration_number: &str) -> Result<String, String> 
 
     let dom = Document::from_str(&body);
 
-    let tables = dom.find(Class("kjoretoy-table")).iter()
+    let tables = dom.find(Class("kjoretoy-table"))
+        .iter()
         .map(table_to_section)
         .collect::<Vec<_>>();
 

@@ -1,5 +1,5 @@
 use select::document::Document;
-use select::predicate::{Class, Name};
+use select::predicate::{Class, Name, Attr};
 use select::node::Node;
 
 use std::collections::HashMap;
@@ -17,7 +17,11 @@ pub struct Section {
 }
 
 fn table_to_section(table: Node) -> Section {
-    let title = table.find(Class("modul-overskrift")).first().unwrap().text();
+    let title = match table.find(Class("modul-overskrift")).first() {
+        Some(title) => title.text(),
+        None => "No title".to_string(),
+    };
+
     let table_body = table.find(Name("th"))
         .iter()
         .zip(table.find(Name("td")).iter())
@@ -50,6 +54,10 @@ pub fn get_registration_number(registration_number: &str) -> Result<String, Vegv
     try!(response.read_to_string(&mut body));
 
     let dom = Document::from_str(&body);
+
+    // let has_entries =
+    //    dom.find(Attr("id", "readspeak")).find(Name("p")).children().document.nodes.len();
+    // println!("{:?}", has_entries);
 
     let tables = dom.find(Class("kjoretoy-table"))
         .iter()

@@ -3,46 +3,22 @@ use std::path::Path;
 use std::io::prelude::*;
 use std::io;
 use std::fmt;
-use std::error;
 
 static CACHE_DIR: &'static str = "cache";
 
-macro_rules! prefix {
+macro_rules! cache_path {
     ($path:expr) => (Path::new(CACHE_DIR).join($path));
+    () => (Path::new(CACHE_DIR));
 }
 
-#[derive(Debug)]
-pub enum CacheError {
-    Io(io::Error),
-    Callback(String),
-}
-
-impl fmt::Display for CacheError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            CacheError::Io(ref err) => write!(f, "{}", err),
-            CacheError::Callback(ref message) => write!(f, "{}", message),
+quick_error! {
+    #[derive(Debug)]
+    pub enum CacheError {
+        Io(err: io::Error) {
+            from()
         }
-    }
-}
-
-impl From<io::Error> for CacheError {
-    fn from(err: io::Error) -> CacheError {
-        CacheError::Io(err)
-    }
-}
-
-impl From<String> for CacheError {
-    fn from(err: String) -> CacheError {
-        CacheError::Callback(err)
-    }
-}
-
-impl error::Error for CacheError {
-    fn description(&self) -> &str {
-        match *self {
-            CacheError::Io(ref err) => err.description(),
-            CacheError::Callback(ref msg) => msg,
+        Callback(err: String) {
+            from()
         }
     }
 }
@@ -53,12 +29,12 @@ pub fn get_cached_or_compute<E, F>(key: &str, fun: F) -> CacheResult
     where E: fmt::Display,
           F: Fn(&str) -> Result<String, E>
 {
-    let root = Path::new(CACHE_DIR);
+    let root = cache_path!();
     try!(DirBuilder::new()
         .recursive(true)
         .create(&root));
 
-    let path = root.join(key);
+    let path = cache_path!(key);
     if let Ok(mut file) = File::open(&path) {
         let mut buf = String::new();
         if let Ok(_) = file.read_to_string(&mut buf) {
@@ -85,7 +61,7 @@ pub fn get_cached_or_compute<E, F>(key: &str, fun: F) -> CacheResult
 #[test]
 fn get_existing() {
     let existing_key = "YEP";
-    let path = prefix!(existing_key);
+    let path = cache_path!(existing_key);
 
     File::create(path).unwrap();
 

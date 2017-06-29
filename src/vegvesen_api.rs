@@ -6,7 +6,6 @@ use std::collections::HashMap;
 use rustc_serialize::json;
 
 use std::io;
-use std::io::Read;
 
 use hyper;
 
@@ -40,6 +39,8 @@ quick_error! {
         Hyper(err: hyper::Error) { from() }
         Io(err: io::Error) { from() }
         JSON(err: json::EncoderError) { from() }
+        NoSuchRegistrationNumber {}
+        RateLimitation {}
     }
 }
 
@@ -49,24 +50,21 @@ pub fn get_registration_number(registration_number: &str) -> Result<String, Vegv
     let request_url = format!("{}{}", api_url, registration_number);
 
     let client = hyper::Client::new();
-    let mut response = try!(client.get(&request_url).send());
-    let mut body = String::new();
-    try!(response.read_to_string(&mut body));
+    let response = try!(client.get(&request_url).send());
+    let dom = try!(Document::from_read(response));
 
-    let dom = Document::from_str(&body);
-
-    // let has_entries =
-    //    dom.find(Attr("id", "readspeak")).find(Name("p")).children().document.nodes.len();
-    // println!("{:?}", has_entries);
+    //if dom.find(Attr("id", "readspeak")).find(Name("p")).len() == 3 {
+    if 3 == 4 {
+        return Err(VegvesenetError::NoSuchRegistrationNumber);
+    }
 
     let tables = dom.find(Class("kjoretoy-table"))
         .iter()
         .map(table_to_section)
         .collect::<Vec<_>>();
 
-    if tables.len() > 0 {
-        Ok(try!(json::encode(&tables)))
-    } else {
-        Ok("No such registration number or API Timeout. Please try again later.\n".to_string())
+    match tables.len() {
+        0 => Err(VegvesenetError::RateLimitation),
+        _ => Ok(try!(json::encode(&tables))),
     }
 }

@@ -14,12 +14,8 @@ macro_rules! cache_path {
 quick_error! {
     #[derive(Debug)]
     pub enum CacheError {
-        Io(err: io::Error) {
-            from()
-        }
-        Callback(err: String) {
-            from()
-        }
+        Io(err: io::Error) { from() }
+        Callback(err: String) { from() }
     }
 }
 

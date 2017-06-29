@@ -31,17 +31,21 @@ fn query_hander(request: &mut Request) -> IronResult<Response> {
         return Ok(Response::with((status::BadRequest, "Invalid number format\n")));
     }
 
-    let result = itry!(disk_cache::get_cached_or_compute(query,
-                                                         vegvesen_api::get_registration_number));
-    Ok(Response::with((status::Ok, result)))
+    match disk_cache::get_cached_or_compute(query, vegvesen_api::get_registration_number) {
+        Ok(value) => Ok(Response::with((status::Ok, value))),
+        Err(disk_cache::CacheError::Callback(description)) => {
+            Ok(Response::with((status::BadRequest, description)))
+        }
+        Err(_) => Ok(Response::with((status::BadRequest))),
+    }
 }
 
 fn main() {
     env_logger::init().unwrap();
 
     let port = "0.0.0.0:3000";
-    let router = router!(get "/" => query_hander,
-                         get "/:query" => query_hander);
+    let router = router!(index: get "/"       => query_hander,
+                         query: get "/:query" => query_hander);
 
     warn!("Server started at {}", port);
 
